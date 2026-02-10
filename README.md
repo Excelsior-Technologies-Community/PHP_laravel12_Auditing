@@ -1,4 +1,14 @@
-# PHP_Laravel12_Auditing
+# PHP_laravel12_Auditing
+
+<p align="center">
+<a href="#"><img src="https://img.shields.io/badge/Laravel-12-red" alt="Laravel Version"></a>
+<a href="#"><img src="https://img.shields.io/badge/PHP-8.x-blue" alt="PHP Version"></a>
+<a href="#"><img src="https://img.shields.io/badge/Authentication-Laravel%20Breeze-green" alt="Auth System"></a>
+<a href="#"><img src="https://img.shields.io/badge/Auditing-owen--it%2Flaravel--auditing-orange" alt="Auditing Package"></a>
+<a href="#"><img src="https://img.shields.io/badge/Database-MySQL-lightgrey" alt="Database"></a>
+</p>
+
+---
 
 ## Overview
 
