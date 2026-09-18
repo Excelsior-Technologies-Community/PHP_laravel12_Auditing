@@ -7,63 +7,100 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // Display all products
+    /**
+     * Display all products.
+     */
     public function index()
     {
-        $products = Product::all(); // Retrieve all products from database
-        return view('products.index', compact('products')); // Return product list view
+        $products = Product::latest()->get();
+
+        return view('products.index', compact('products'));
     }
 
-    // Show create product form
+    /**
+     * Show create product form.
+     */
     public function create()
     {
-        return view('products.create'); // Return create product view
+        return view('products.create');
     }
 
-    // Store new product in database
+    /**
+     * Store new product.
+     */
     public function store(Request $request)
     {
-        // Validate incoming request data
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|integer',
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:active,inactive'],
         ]);
 
-        Product::create($request->all()); // Create new product record
+        Product::create($validated);
 
-        return redirect()->route('products.index'); // Redirect to product list
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product created successfully.');
     }
 
-    // Show edit form for specific product
+    /**
+     * Show edit product form.
+     */
     public function edit($id)
     {
-        $product = Product::findOrFail($id); // Find product by ID or fail
-        return view('products.edit', compact('product')); // Return edit view
+        $product = Product::findOrFail($id);
+
+        return view('products.edit', compact('product'));
     }
 
-    // Update specific product
+    /**
+     * Update product.
+     */
     public function update(Request $request, $id)
     {
-        $product = Product::findOrFail($id); // Retrieve product by ID
+        $product = Product::findOrFail($id);
 
-        $product->update($request->all()); // Update product data
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:active,inactive'],
+        ]);
 
-        return redirect()->route('products.index'); // Redirect to product list
+        $product->update($validated);
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product updated successfully.');
     }
 
-    // Delete specific product
+    /**
+     * Delete product.
+     */
     public function destroy($id)
     {
-        Product::findOrFail($id)->delete(); // Delete product by ID
-        return redirect()->route('products.index'); // Redirect after deletion
+        $product = Product::findOrFail($id);
+
+        $product->delete();
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Product deleted successfully.');
     }
 
-    // Display audit history of specific product
+    /**
+     * Display audit history for a specific product.
+     */
     public function audits($id)
     {
-        $product = Product::findOrFail($id); // Retrieve product by ID
-        $audits = $product->audits()->latest()->get(); // Get latest audit records
+        $product = Product::findOrFail($id);
 
-        return view('products.audits', compact('audits')); // Return audit history view
+        $audits = $product->audits()
+            ->latest()
+            ->get();
+
+        return view('products.audits', compact(
+            'product',
+            'audits'
+        ));
     }
 }
