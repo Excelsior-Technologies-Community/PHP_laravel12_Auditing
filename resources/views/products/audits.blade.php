@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Audit History</title>
+
+    <title>Audit History - {{ $product->name }}</title>
 
     <style>
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #f4f6f9;
             padding: 40px;
+            margin: 0;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: auto;
             background: white;
             padding: 35px;
@@ -19,26 +23,43 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         }
 
-        .back-btn {
-            display: inline-block;
+        .top-actions {
             margin-bottom: 25px;
+        }
+
+        .back-btn,
+        .dashboard-btn,
+        .logs-btn {
+            display: inline-block;
+            margin-right: 8px;
             padding: 8px 14px;
-            background: #6c757d;
             color: white;
             text-decoration: none;
             border-radius: 6px;
             font-size: 14px;
         }
 
-        .back-btn:hover {
-            background: #5a6268;
+        .back-btn {
+            background: #6c757d;
+        }
+
+        .dashboard-btn {
+            background: #111827;
+        }
+
+        .logs-btn {
+            background: #7c3aed;
         }
 
         h2 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
             margin-bottom: 30px;
         }
 
-        /* Timeline */
         .timeline {
             position: relative;
             padding-left: 30px;
@@ -73,9 +94,21 @@
             background: #3490dc;
         }
 
-        .audit.created::before { background: #38c172; }
-        .audit.updated::before { background: #3490dc; }
-        .audit.deleted::before { background: #e3342f; }
+        .audit.created::before {
+            background: #38c172;
+        }
+
+        .audit.updated::before {
+            background: #3490dc;
+        }
+
+        .audit.deleted::before {
+            background: #e3342f;
+        }
+
+        .audit.restored::before {
+            background: #7c3aed;
+        }
 
         .badge {
             padding: 5px 12px;
@@ -87,9 +120,21 @@
             margin-bottom: 10px;
         }
 
-        .created-badge { background: #38c172; }
-        .updated-badge { background: #3490dc; }
-        .deleted-badge { background: #e3342f; }
+        .created-badge {
+            background: #38c172;
+        }
+
+        .updated-badge {
+            background: #3490dc;
+        }
+
+        .deleted-badge {
+            background: #e3342f;
+        }
+
+        .restored-badge {
+            background: #7c3aed;
+        }
 
         .meta {
             font-size: 14px;
@@ -109,6 +154,10 @@
             font-size: 14px;
         }
 
+        .change-row:last-child {
+            margin-bottom: 0;
+        }
+
         .field {
             font-weight: 600;
         }
@@ -122,17 +171,55 @@
             color: #38c172;
             font-weight: bold;
         }
+
+        .empty {
+            padding: 30px;
+            text-align: center;
+            color: #6b7280;
+        }
+
     </style>
+
 </head>
+
 <body>
 
 <div class="container">
 
-    <a href="{{ route('products.index') }}" class="back-btn">
-        ⬅ Back to Products
-    </a>
+    <div class="top-actions">
 
-    <h2>Audit History</h2>
+        <a
+            href="{{ route('products.index') }}"
+            class="back-btn"
+        >
+            ⬅ Back to Products
+        </a>
+
+        <a
+            href="{{ route('audit.dashboard') }}"
+            class="dashboard-btn"
+        >
+            📊 Audit Dashboard
+        </a>
+
+        <a
+            href="{{ route('audit.index') }}"
+            class="logs-btn"
+        >
+            🔎 All Audit Logs
+        </a>
+
+    </div>
+
+    <h2>
+        Audit History
+    </h2>
+
+    <div class="subtitle">
+        Product: <strong>{{ $product->name }}</strong>
+        |
+        Product ID: {{ $product->id }}
+    </div>
 
     <div class="timeline">
 
@@ -140,68 +227,117 @@
 
             <div class="audit {{ $audit->event }}">
 
-                {{-- Event Badge --}}
-                <span class="badge 
+                <span
+                    class="badge
                     {{ $audit->event == 'created' ? 'created-badge' : '' }}
                     {{ $audit->event == 'updated' ? 'updated-badge' : '' }}
-                    {{ $audit->event == 'deleted' ? 'deleted-badge' : '' }}">
+                    {{ $audit->event == 'deleted' ? 'deleted-badge' : '' }}
+                    {{ $audit->event == 'restored' ? 'restored-badge' : '' }}"
+                >
                     {{ ucfirst($audit->event) }}
                 </span>
 
-                {{-- Meta Info --}}
                 <div class="meta">
+
                     <strong>User:</strong>
                     {{ $audit->user ? $audit->user->name : 'System' }}
+
                     |
+
                     <strong>Date:</strong>
                     {{ $audit->created_at->format('d M Y, h:i A') }}
+
+                    |
+
+                    <strong>IP:</strong>
+                    {{ $audit->ip_address ?? 'N/A' }}
+
                 </div>
 
-                {{-- Changes --}}
                 <div class="changes">
+
                     <strong>Changes:</strong>
 
-                    @foreach($audit->new_values as $field => $value)
+                    @php
+                        $oldValues = $audit->old_values ?? [];
+                        $newValues = $audit->new_values ?? [];
+
+                        $fields = array_unique(
+                            array_merge(
+                                array_keys($oldValues),
+                                array_keys($newValues)
+                            )
+                        );
+                    @endphp
+
+                    @forelse($fields as $field)
 
                         <div class="change-row">
-                            <span class="field">
-                                {{ ucfirst($field) }}
-                            </span> :
 
-                            {{-- OLD VALUE --}}
+                            <span class="field">
+                                {{ ucfirst(str_replace('_', ' ', $field)) }}
+                            </span>
+
+                            :
+
                             <span class="old">
-                                @if(isset($audit->old_values[$field]))
-                                    @if(is_numeric($audit->old_values[$field]))
-                                        ₹{{ number_format((float)$audit->old_values[$field]) }}
+
+                                @if(array_key_exists($field, $oldValues))
+
+                                    @if(is_numeric($oldValues[$field]))
+                                        ₹{{ number_format((float) $oldValues[$field]) }}
                                     @else
-                                        {{ $audit->old_values[$field] }}
+                                        {{ $oldValues[$field] }}
                                     @endif
+
                                 @else
+
                                     N/A
+
                                 @endif
+
                             </span>
 
                             →
 
-                            {{-- NEW VALUE --}}
                             <span class="new">
-                                @if(is_numeric($value))
-                                    ₹{{ number_format((float)$value) }}
+
+                                @if(array_key_exists($field, $newValues))
+
+                                    @if(is_numeric($newValues[$field]))
+                                        ₹{{ number_format((float) $newValues[$field]) }}
+                                    @else
+                                        {{ $newValues[$field] }}
+                                    @endif
+
                                 @else
-                                    {{ $value }}
+
+                                    N/A
+
                                 @endif
+
                             </span>
 
                         </div>
 
-                    @endforeach
+                    @empty
+
+                        <div class="change-row">
+                            No field changes recorded.
+                        </div>
+
+                    @endforelse
 
                 </div>
 
             </div>
 
         @empty
-            <p>No audit history found.</p>
+
+            <div class="empty">
+                No audit history found for this product.
+            </div>
+
         @endforelse
 
     </div>
@@ -209,4 +345,5 @@
 </div>
 
 </body>
+
 </html>
