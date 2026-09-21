@@ -47,9 +47,24 @@ class AuditController extends Controller
 
         $recentAudits = (clone $baseQuery)
             ->with(['user', 'auditable'])
-            ->latest()
-            ->limit(10)
+            ->oldest()
+            ->limit(5)
             ->get();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Audit Event Statistics
+    |--------------------------------------------------------------------------
+    */
+
+        $eventStats = [
+            'created' => $createdAudits,
+            'updated' => $updatedAudits,
+            'deleted' => $deletedAudits,
+            'restored' => (clone $baseQuery)
+                ->where('event', 'restored')
+                ->count(),
+        ];
 
         return view('audits.dashboard', compact(
             'totalAudits',
@@ -58,9 +73,12 @@ class AuditController extends Controller
             'deletedAudits',
             'todayAudits',
             'activeUsers',
-            'recentAudits'
+            'recentAudits',
+            'eventStats'
         ));
     }
+
+
 
     /**
      * Display searchable and filterable audit logs.
