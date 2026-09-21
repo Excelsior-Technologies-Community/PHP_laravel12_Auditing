@@ -1,19 +1,20 @@
 <?php
 
 use App\Http\Controllers\AuditController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
+
 /*
 |--------------------------------------------------------------------------
-| Default Welcome Page
+| Home
 |--------------------------------------------------------------------------
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('products.index');
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -23,38 +24,56 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
+
 
 /*
 |--------------------------------------------------------------------------
-| Authentication Protected Routes
+| Product Routes
 |--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| Bulk routes MUST come BEFORE Route::resource().
+|
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Profile
+    | Bulk Product Status
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/profile', [ProfileController::class, 'edit'])
-        ->name('profile.edit');
+    Route::patch(
+        '/products/bulk-status',
+        [ProductController::class, 'bulkStatus']
+    )->name('products.bulk-status');
 
-    Route::patch('/profile', [ProfileController::class, 'update'])
-        ->name('profile.update');
-
-    Route::delete('/profile', [ProfileController::class, 'destroy'])
-        ->name('profile.destroy');
 
     /*
     |--------------------------------------------------------------------------
-    | Products
+    | Bulk Product Delete
     |--------------------------------------------------------------------------
     */
 
-    Route::resource('products', ProductController::class);
+    Route::delete(
+        '/products/bulk-delete',
+        [ProductController::class, 'bulkDelete']
+    )->name('products.bulk-delete');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Duplicate Product
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/products/{id}/duplicate',
+        [ProductController::class, 'duplicate']
+    )->name('products.duplicate');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -62,8 +81,20 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/products/{id}/audits', [ProductController::class, 'audits'])
-        ->name('products.audits');
+    Route::get(
+        '/products/{id}/audits',
+        [ProductController::class, 'audits']
+    )->name('products.audits');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product CRUD
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('products', ProductController::class);
+
 
     /*
     |--------------------------------------------------------------------------
@@ -71,8 +102,11 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/audit-dashboard', [AuditController::class, 'dashboard'])
-        ->name('audit.dashboard');
+    Route::get(
+        '/audit-dashboard',
+        [AuditController::class, 'dashboard']
+    )->name('audit.dashboard');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -80,23 +114,42 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/audit-logs', [AuditController::class, 'index'])
-        ->name('audit.index');
+    Route::get(
+        '/audit-logs',
+        [AuditController::class, 'index']
+    )->name('audit.index');
+
 
     /*
     |--------------------------------------------------------------------------
-    | Audit CSV Export
+    | Audit Logs Export
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/audit-logs/export', [AuditController::class, 'export'])
-        ->name('audit.export');
+    Route::get(
+        '/audit-logs/export',
+        [AuditController::class, 'export']
+    )->name('audit.export');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Detail
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/audit-logs/{id}',
+        [AuditController::class, 'show']
+    )->name('audit.show');
+
 });
+
 
 /*
 |--------------------------------------------------------------------------
-| Breeze Authentication Routes
+| Authentication
 |--------------------------------------------------------------------------
 */
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
