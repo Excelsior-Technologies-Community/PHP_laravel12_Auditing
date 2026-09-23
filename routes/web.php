@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -142,6 +143,27 @@ Route::middleware(['auth'])->group(function () {
         '/audit-logs/{id}',
         [AuditController::class, 'show']
     )->name('audit.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Rollback
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/audit-logs/{id}/rollback',
+        [AuditController::class, 'rollback']
+    )->name('audit.rollback');
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Profile Routes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 });
 
