@@ -524,6 +524,64 @@
 
 
         {{-- =========================
+             SUSPICIOUS AUDIT THREAT & SECURITY ANOMALY DETECTOR
+        ========================== --}}
+        @if(isset($securityThreats))
+            <div class="card" style="margin-bottom: 25px; border-left: 6px solid #dc2626; background: #1f2937; color: white;">
+                <div class="card-header" style="background: #111827; border-bottom: 1px solid #374151;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">🚨</span>
+                        <div>
+                            <h2 style="color: white; margin: 0; font-size: 18px;">Suspicious Audit Threat & Security Anomaly Detector</h2>
+                            <small style="color: #9ca3af;">Real-time telemetry analysis of system data anomalies and mass deletions</small>
+                        </div>
+                    </div>
+                    <div>
+                        @if($securityThreats['threat_level'] === 'CRITICAL THREAT DETECTED')
+                            <span style="background: #dc2626; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px;">CRITICAL THREAT DETECTED</span>
+                        @elseif($securityThreats['threat_level'] === 'MODERATE WARNING')
+                            <span style="background: #d97706; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px;">MODERATE ANOMALY DETECTED</span>
+                        @else
+                            <span style="background: #16a34a; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px;">SYSTEM SECURE</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+                        <div style="background: #374151; padding: 15px; border-radius: 10px;">
+                            <span style="color: #9ca3af; font-size: 12px; display: block; margin-bottom: 4px;">Deletions Last Hour</span>
+                            <strong style="font-size: 24px; color: {{ $securityThreats['deletions_last_hour'] >= 3 ? '#f87171' : '#f3f4f6' }};">
+                                {{ $securityThreats['deletions_last_hour'] }}
+                            </strong>
+                            @if($securityThreats['suspicious_mass_deletes'])
+                                <span style="display: block; font-size: 11px; color: #f87171; margin-top: 5px; font-weight: bold;">⚠️ Mass Delete Alert</span>
+                            @else
+                                <span style="display: block; font-size: 11px; color: #4ade80; margin-top: 5px;">Normal Rate</span>
+                            @endif
+                        </div>
+                        <div style="background: #374151; padding: 15px; border-radius: 10px;">
+                            <span style="color: #9ca3af; font-size: 12px; display: block; margin-bottom: 4px;">Price Shift Anomalies (>30%)</span>
+                            <strong style="font-size: 24px; color: {{ $securityThreats['price_spikes_count'] > 0 ? '#fbbf24' : '#f3f4f6' }};">
+                                {{ $securityThreats['price_spikes_count'] }}
+                            </strong>
+                            @if($securityThreats['price_spikes_count'] > 0)
+                                <span style="display: block; font-size: 11px; color: #fbbf24; margin-top: 5px; font-weight: bold;">⚠️ Large Price Jump</span>
+                            @else
+                                <span style="display: block; font-size: 11px; color: #4ade80; margin-top: 5px;">Stable Prices</span>
+                            @endif
+                        </div>
+                        <div style="background: #374151; padding: 15px; border-radius: 10px;">
+                            <span style="color: #9ca3af; font-size: 12px; display: block; margin-bottom: 4px;">Audit Guard Status</span>
+                            <strong style="font-size: 24px; color: #60a5fa;">Active Monitor</strong>
+                            <span style="display: block; font-size: 11px; color: #60a5fa; margin-top: 5px;">100% Protection</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+
+        {{-- =========================
              CHART + ACTIVE USERS
         ========================== --}}
 

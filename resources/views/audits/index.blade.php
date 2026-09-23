@@ -620,15 +620,22 @@
 
                             </td>
 
-                            <td>
+                            <td style="display: flex; gap: 6px; align-items: center;">
 
                                 <a
-                                    href="{{ route('products.audits', $audit->auditable_id) }}"
+                                    href="{{ route('audit.show', $audit->id) }}"
                                     class="btn btn-search"
-                                    style="padding: 7px 10px;"
+                                    style="padding: 6px 10px; font-size: 12px;"
                                 >
-                                    View
+                                    🔍 Diff
                                 </a>
+
+                                <form method="POST" action="{{ route('audit.rollback', $audit->id) }}" onsubmit="return confirm('Rollback database state to this historical audit snapshot?');" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" class="btn" style="background:#f59e0b; color:white; padding:6px 10px; font-size:12px;">
+                                        ⏪ Rollback
+                                    </button>
+                                </form>
 
                             </td>
 

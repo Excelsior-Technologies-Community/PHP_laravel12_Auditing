@@ -66,6 +66,46 @@ class AuditController extends Controller
                 ->count(),
         ];
 
+        /*
+        |--------------------------------------------------------------------------
+        | Suspicious Audit Threat & Security Anomaly Detector Telemetry
+        |--------------------------------------------------------------------------
+        */
+
+        $deletionsLastHour = (clone $baseQuery)
+            ->where('event', 'deleted')
+            ->where('created_at', '>=', now()->subHour()->toDateTimeString())
+            ->count();
+
+        $suspiciousMassDeletes = $deletionsLastHour >= 3;
+
+        $priceSpikesCount = (clone $baseQuery)
+            ->where('event', 'updated')
+            ->get()
+            ->filter(function ($audit) {
+                $oldPrice = $audit->old_values['price'] ?? null;
+                $newPrice = $audit->new_values['price'] ?? null;
+                if ($oldPrice && $newPrice && $oldPrice > 0) {
+                    $diffRatio = abs($newPrice - $oldPrice) / $oldPrice;
+                    return $diffRatio > 0.3; // > 30% price shift
+                }
+                return false;
+            })->count();
+
+        $threatLevel = 'SYSTEM SECURE';
+        if ($suspiciousMassDeletes || $priceSpikesCount >= 2) {
+            $threatLevel = 'CRITICAL THREAT DETECTED';
+        } elseif ($deletionsLastHour > 0 || $priceSpikesCount > 0) {
+            $threatLevel = 'MODERATE WARNING';
+        }
+
+        $securityThreats = [
+            'threat_level' => $threatLevel,
+            'deletions_last_hour' => $deletionsLastHour,
+            'suspicious_mass_deletes' => $suspiciousMassDeletes,
+            'price_spikes_count' => $priceSpikesCount,
+        ];
+
         return view('audits.dashboard', compact(
             'totalAudits',
             'createdAudits',
@@ -74,7 +114,8 @@ class AuditController extends Controller
             'todayAudits',
             'activeUsers',
             'recentAudits',
-            'eventStats'
+            'eventStats',
+            'securityThreats'
         ));
     }
 
@@ -486,5 +527,71 @@ class AuditController extends Controller
         */
 
         return (string) $value;
+    }
+
+    /**
+     * Display single audit detail with visual diff inspector.
+     */
+    public function show($id)
+    {
+        $audit = Audit::with(['user', 'auditable'])->findOrFail($id);
+
+        return view('audits.show', compact('audit'));
+    }
+
+    /**
+     * Rollback model state from an audit log snapshot.
+     */
+    public function rollback($id)
+    {
+        $audit = Audit::findOrFail($id);
+
+        $event = $audit->event;
+        $auditableType = $audit->auditable_type;
+        $auditableId = $audit->auditable_id;
+        $oldValues = $audit->old_values ?? [];
+        $newValues = $audit->new_values ?? [];
+
+        if (!$auditableType || !class_exists($auditableType)) {
+            return redirect()->back()->with('error', 'Cannot rollback: Target model class is invalid or missing.');
+        }
+
+        if ($event === 'updated') {
+            if (empty($oldValues)) {
+                return redirect()->back()->with('error', 'No previous state found in audit record to rollback.');
+            }
+
+            $model = $auditableType::find($auditableId);
+            if ($model) {
+                $model->update($oldValues);
+                return redirect()->back()->with('success', "Audit #{$id} update successfully rolled back!");
+            } else {
+                return redirect()->back()->with('error', 'Target record no longer exists in database.');
+            }
+        } elseif ($event === 'deleted') {
+            $restoreValues = !empty($oldValues) ? $oldValues : $newValues;
+            if (empty($restoreValues)) {
+                return redirect()->back()->with('error', 'No saved attributes found to restore deleted record.');
+            }
+
+            $model = new $auditableType();
+            $model->forceFill($restoreValues);
+            if (isset($restoreValues['id'])) {
+                $model->id = $restoreValues['id'];
+            }
+            $model->save();
+
+            return redirect()->back()->with('success', "Deleted record successfully restored from Audit #{$id} snapshot!");
+        } elseif ($event === 'created') {
+            $model = $auditableType::find($auditableId);
+            if ($model) {
+                $model->delete();
+                return redirect()->back()->with('success', "Creation event #{$id} successfully undone (record deleted)!");
+            } else {
+                return redirect()->back()->with('error', 'Created record is already removed from database.');
+            }
+        }
+
+        return redirect()->back()->with('error', 'Rollback is not supported for this audit event type.');
     }
 }
